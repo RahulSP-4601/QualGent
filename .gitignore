@@ -1,2 +1,37 @@
-backend/.env
-backend/.env
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Environment files
+.env
+
+# VS Code settings (optional)
+.vscode/
+
+# macOS system files (optional)
+.DS_Store
+
+# Byte-compiled / optimized / DLL files
+*.pyo
+*.pyd
+*.pyc
+
+# Distribution and packaging
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+sdist/
+develop-eggs/
+.installed.cfg
+*.manifest
+*.spec
+
+# Test cache
+.cache/
+
+# MySQL dumps (if any)
+*.sql
+*.dump

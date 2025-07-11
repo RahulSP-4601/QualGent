@@ -16,6 +16,9 @@ function App() {
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [selectedCategoryName, setSelectedCategoryName] = useState("Select a Category");
 
+  const [categoryRefreshTrigger, setCategoryRefreshTrigger] = useState(0);
+  const [testRefreshTrigger, setTestRefreshTrigger] = useState(0);
+
   const API_BASE_URL = 'http://localhost:8000';
 
   const startResizing = () => setIsResizing(true);
@@ -61,17 +64,19 @@ function App() {
   const handleUpdateTestCase = (updated) => {
     setTestCases(testCases.map(t => t.id === updated.id ? updated : t));
   };
-  
+
   const handleDeleteTestCase = (id) => {
     setTestCases(testCases.filter(t => t.id !== id));
   };
-  
 
   return (
     <div className="app-wrapper" onMouseMove={handleMouseMove} onMouseUp={stopResizing}>
       <Navbar />
       <div className="app-container">
-        <Sidebar onCategorySelect={handleCategorySelect} />
+        <Sidebar
+          onCategorySelect={handleCategorySelect}
+          refreshTrigger={categoryRefreshTrigger}
+        />
         <div className="main-content">
           <div className="left-panel" style={{ flex: `1 1 calc(100% - ${rightPanelWidth}px)` }}>
             <h2 className="section-title">Test Cases Repository</h2>
@@ -81,8 +86,12 @@ function App() {
               selectedCategory={selectedCategoryName}
               onCreateClick={handleNewClick}
               onTestClick={handleTestClick}
+              refreshTrigger={testRefreshTrigger}
             />
-            <ChatBox />
+            <ChatBox
+              onTestCreated={() => setTestRefreshTrigger(prev => prev + 1)}
+              onCategoryChanged={() => setCategoryRefreshTrigger(prev => prev + 1)}
+            />
           </div>
 
           <div
