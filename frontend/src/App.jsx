@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/navbar';
 import Sidebar from './components/Sidebar';
 import TestList from './components/TestList';
@@ -16,10 +16,37 @@ function App() {
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [selectedCategoryName, setSelectedCategoryName] = useState("Select a Category");
 
-  const [categoryRefreshTrigger, setCategoryRefreshTrigger] = useState(0);
-  const [testRefreshTrigger, setTestRefreshTrigger] = useState(0);
+  const [categories, setCategories] = useState([]);
 
   const API_BASE_URL = 'http://localhost:8000';
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/categories`);
+      setCategories(res.data);
+
+      // If the selected category was renamed, update its name
+      const updated = res.data.find(c => c.id === selectedCategoryId);
+      if (updated) {
+        setSelectedCategoryName(updated.name);
+      }
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+    }
+  };
+
+  const fetchTestCases = async (categoryId) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/categories/${categoryId}/tests`);
+      setTestCases(response.data);
+    } catch (err) {
+      console.error('Failed to fetch test cases:', err);
+    }
+  };
 
   const startResizing = () => setIsResizing(true);
   const stopResizing = () => setIsResizing(false);
@@ -33,22 +60,12 @@ function App() {
     }
   };
 
-  const handleCategorySelect = async (categoryId, categoryName) => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/categories/${categoryId}/tests`);
-      setTestCases(response.data);
-      setSelectedCategoryId(categoryId);
-      setSelectedCategoryName(categoryName);
-      setSelectedTestCase(null);
-      setIsCreatingNewTest(false);
-    } catch (err) {
-      console.error('Failed to fetch test cases:', err);
-    }
-  };
-
-  const handleAddTestCase = (newTest) => {
-    setTestCases([...testCases, newTest]);
+  const handleCategorySelect = (categoryId, categoryName) => {
+    setSelectedCategoryId(categoryId);
+    setSelectedCategoryName(categoryName);
+    setSelectedTestCase(null);
     setIsCreatingNewTest(false);
+    fetchTestCases(categoryId);
   };
 
   const handleTestClick = (test) => {
@@ -61,21 +78,14 @@ function App() {
     setSelectedTestCase(null);
   };
 
-  const handleUpdateTestCase = (updated) => {
-    setTestCases(testCases.map(t => t.id === updated.id ? updated : t));
-  };
-
-  const handleDeleteTestCase = (id) => {
-    setTestCases(testCases.filter(t => t.id !== id));
-  };
-
   return (
     <div className="app-wrapper" onMouseMove={handleMouseMove} onMouseUp={stopResizing}>
       <Navbar />
       <div className="app-container">
         <Sidebar
           onCategorySelect={handleCategorySelect}
-          refreshTrigger={categoryRefreshTrigger}
+          categories={categories}
+          fetchCategories={fetchCategories}
         />
         <div className="main-content">
           <div className="left-panel" style={{ flex: `1 1 calc(100% - ${rightPanelWidth}px)` }}>
@@ -86,14 +96,16 @@ function App() {
               selectedCategory={selectedCategoryName}
               onCreateClick={handleNewClick}
               onTestClick={handleTestClick}
-              refreshTrigger={testRefreshTrigger}
             />
             <ChatBox
-              onTestCreated={() => setTestRefreshTrigger(prev => prev + 1)}
-              onCategoryChanged={() => setCategoryRefreshTrigger(prev => prev + 1)}
+              onTestCreated={() => {
+                if (selectedCategoryId) fetchTestCases(selectedCategoryId);
+              }}
+              onCategoryChanged={fetchCategories}
+              categories={categories}
+              fetchCategories={fetchCategories}
             />
           </div>
-
           <div
             className="resizer"
             onMouseDown={startResizing}
@@ -103,9 +115,15 @@ function App() {
             <EditTestCase
               isCreatingNewTest={isCreatingNewTest}
               selectedTestCase={selectedTestCase}
-              onCreate={handleAddTestCase}
-              onUpdate={handleUpdateTestCase}
-              onDelete={handleDeleteTestCase}
+              onCreate={() => {
+                if (selectedCategoryId) fetchTestCases(selectedCategoryId);
+              }}
+              onUpdate={() => {
+                if (selectedCategoryId) fetchTestCases(selectedCategoryId);
+              }}
+              onDelete={() => {
+                if (selectedCategoryId) fetchTestCases(selectedCategoryId);
+              }}
               onClose={() => {
                 setIsCreatingNewTest(false);
                 setSelectedTestCase(null);

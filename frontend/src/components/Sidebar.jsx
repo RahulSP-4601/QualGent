@@ -1,31 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import '../styles/Sidebar.css';
 import TestCategory from './TestCategory';
 import EditCategoryModal from './EditCategoryModal';
 import AddCategoryModal from './AddCategoryModal';
 import axios from 'axios';
 
-function Sidebar({ onCategorySelect }) {
-  const [categories, setCategories] = useState([]);
+function Sidebar({ onCategorySelect, categories, fetchCategories }) {
   const [selected, setSelected] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
   const API_BASE_URL = 'http://localhost:8000';
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/categories`);
-      setCategories(response.data);
-    } catch (err) {
-      console.error('Failed to fetch categories:', err);
-    }
-  };
 
   const handleEdit = (index) => {
     setEditIndex(index);
@@ -37,9 +23,7 @@ function Sidebar({ onCategorySelect }) {
     if (window.confirm('Delete this category?')) {
       try {
         await axios.delete(`${API_BASE_URL}/categories/${categoryId}`);
-        const updated = [...categories];
-        updated.splice(index, 1);
-        setCategories(updated);
+        await fetchCategories();
       } catch (err) {
         console.error('Failed to delete category:', err);
         alert('Delete failed');
@@ -50,13 +34,9 @@ function Sidebar({ onCategorySelect }) {
   const handleSave = async (newName) => {
     const category = categories[editIndex];
     try {
-      const response = await axios.put(`${API_BASE_URL}/categories/${category.id}`, {
-        name: newName,
-      });
-      const updated = [...categories];
-      updated[editIndex] = response.data;
-      setCategories(updated);
+      await axios.put(`${API_BASE_URL}/categories/${category.id}`, { name: newName });
       setShowModal(false);
+      await fetchCategories();
     } catch (err) {
       console.error('Failed to update category:', err);
       alert('Update failed');
@@ -65,11 +45,9 @@ function Sidebar({ onCategorySelect }) {
 
   const handleAddCategory = async (newCategoryName) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/categories`, {
-        name: newCategoryName,
-      });
-      setCategories([...categories, response.data]);
+      await axios.post(`${API_BASE_URL}/categories`, { name: newCategoryName });
       setShowAddModal(false);
+      await fetchCategories();
     } catch (error) {
       alert('Category creation failed!');
       console.error(error);
