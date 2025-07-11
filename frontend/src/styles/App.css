@@ -24,7 +24,7 @@
   flex: 1;
   flex-direction: row;
   gap: 0;
-  padding: 32px;
+  padding: 22px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -32,9 +32,10 @@
 .left-panel {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 14px;
   overflow: hidden;
   min-width: 300px;
+  margin-top: -10px;
 }
 
 .right-panel {
@@ -50,7 +51,7 @@
 .section-title {
   font-size: 24px;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 1px;
   align-items: center;
   text-align: center;
 }
