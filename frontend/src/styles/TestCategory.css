@@ -1,0 +1,62 @@
+.test-category {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: #f1f5f9;
+  border-radius: 16px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: background-color 0.2s ease;
+  color: #0f172a;
+  position: relative;
+}
+
+.test-category.active {
+  background-color: #4f9afb;
+}
+
+.test-category:hover {
+  background-color: #e2e8f0;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.count {
+  background-color: #cbd5e1;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.name {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.test-category:hover .actions {
+  opacity: 1;
+}
+
+.actions svg {
+  font-size: 16px;
+  color: #475569;
+  cursor: pointer;
+}
+
+.actions svg:hover {
+  color: #0f172a;
+}
