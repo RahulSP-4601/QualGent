@@ -2,20 +2,13 @@ import React, { useState, useEffect } from 'react';
 import '../styles/ChatBox.css';
 import axios from 'axios';
 
-function ChatBox({ onTestCreated, onCategoryChanged }) {
+function ChatBox({ onTestCreated, onCategoryChanged, categories, fetchCategories }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [pendingTests, setPendingTests] = useState([]);
-  const [categories, setCategories] = useState([]);
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    const res = await axios.get('http://localhost:8000/categories');
-    setCategories(res.data);
-  };
+  const [duplicateMatches, setDuplicateMatches] = useState([]);
+  const [pendingAction, setPendingAction] = useState(null);
+  const [actionPayload, setActionPayload] = useState(null);
 
   const sendToAI = async (newMessages) => {
     try {
@@ -48,12 +41,46 @@ function ChatBox({ onTestCreated, onCategoryChanged }) {
     }
 
     if (deleteMatch?.[1]) {
-      await deleteCategoryByName(deleteMatch[1].trim());
+      const matches = categories
+        .map((cat, idx) => ({ ...cat, displayIndex: idx + 1 }))
+        .filter(cat => cat.name.toLowerCase() === deleteMatch[1].trim().toLowerCase());
+
+      if (matches.length === 1) {
+        await deleteCategoryById(matches[0].id, matches[0].name);
+      } else if (matches.length > 1) {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: `⚠️ Multiple categories named "${deleteMatch[1].trim()}" found. Please select which one to delete:`
+        }]);
+        setDuplicateMatches(matches);
+        setPendingAction('delete');
+        setActionPayload({ name: deleteMatch[1].trim() });
+      } else {
+        setMessages(prev => [...prev, { role: 'assistant', content: `❌ No category named "${deleteMatch[1].trim()}" found.` }]);
+      }
       return;
     }
 
     if (updateMatch?.length === 3) {
-      await updateCategory(updateMatch[1].trim(), updateMatch[2].trim());
+      const oldName = updateMatch[1].trim();
+      const newName = updateMatch[2].trim();
+      const matches = categories
+        .map((cat, idx) => ({ ...cat, displayIndex: idx + 1 }))
+        .filter(cat => cat.name.toLowerCase() === oldName.toLowerCase());
+
+      if (matches.length === 1) {
+        await updateCategoryById(matches[0].id, oldName, newName);
+      } else if (matches.length > 1) {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: `⚠️ Multiple categories named "${oldName}" found. Please select which one to update:`
+        }]);
+        setDuplicateMatches(matches);
+        setPendingAction('update');
+        setActionPayload({ oldName, newName });
+      } else {
+        setMessages(prev => [...prev, { role: 'assistant', content: `❌ No category named "${oldName}" found.` }]);
+      }
       return;
     }
 
@@ -72,6 +99,17 @@ function ChatBox({ onTestCreated, onCategoryChanged }) {
         setPendingTests(extracted);
       }
     }
+  };
+
+  const handleDuplicateChoice = async (cat) => {
+    if (pendingAction === 'delete') {
+      await deleteCategoryById(cat.id, cat.name);
+    } else if (pendingAction === 'update') {
+      await updateCategoryById(cat.id, actionPayload.oldName, actionPayload.newName);
+    }
+    setDuplicateMatches([]);
+    setPendingAction(null);
+    setActionPayload(null);
   };
 
   const handleConfirmCategory = async (categoryId) => {
@@ -117,12 +155,9 @@ function ChatBox({ onTestCreated, onCategoryChanged }) {
     }
   };
 
-  const deleteCategoryByName = async (name) => {
+  const deleteCategoryById = async (id, name) => {
     try {
-      const res = await axios.get('http://localhost:8000/categories');
-      const category = res.data.find(cat => cat.name.toLowerCase() === name.toLowerCase());
-      if (!category) throw new Error("Category not found");
-      await axios.delete(`http://localhost:8000/categories/${category.id}`);
+      await axios.delete(`http://localhost:8000/categories/${id}`);
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: `🗑️ Category "${name}" deleted successfully.`
@@ -137,12 +172,9 @@ function ChatBox({ onTestCreated, onCategoryChanged }) {
     }
   };
 
-  const updateCategory = async (oldName, newName) => {
+  const updateCategoryById = async (id, oldName, newName) => {
     try {
-      const res = await axios.get('http://localhost:8000/categories');
-      const category = res.data.find(cat => cat.name.toLowerCase() === oldName.toLowerCase());
-      if (!category) throw new Error("Category not found");
-      await axios.put(`http://localhost:8000/categories/${category.id}`, { name: newName });
+      await axios.put(`http://localhost:8000/categories/${id}`, { name: newName });
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: `✏️ Category "${oldName}" renamed to "${newName}".`
@@ -174,6 +206,16 @@ function ChatBox({ onTestCreated, onCategoryChanged }) {
           {categories.map(cat => (
             <button key={cat.id} onClick={() => handleConfirmCategory(cat.id)}>
               {cat.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {duplicateMatches.length > 0 && (
+        <div className="category-confirmation">
+          {duplicateMatches.map(cat => (
+            <button key={cat.id} onClick={() => handleDuplicateChoice(cat)}>
+              {`#${cat.displayIndex}: ${cat.name}`}
             </button>
           ))}
         </div>
