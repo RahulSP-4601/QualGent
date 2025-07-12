@@ -1,0 +1,12 @@
+FROM node:20
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+
+RUN npm install --omit=optional
+RUN npm install @rollup/rollup-linux-arm64-gnu --save-dev  # <--- Add this line
+
+COPY . .
+
+CMD [ "npm", "run", "dev" ]
