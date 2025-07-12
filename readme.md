@@ -9,6 +9,19 @@ QualGent is a full-stack test case repository management platform built with **F
 
 ---
 
+## AI Chat Assistant (OpenAI Integrated)
+
+The built-in AI assistant allows you to interact using natural language. It supports:
+
+- **Create Category**: `Create category <CategoryName>`
+- **Update Category**: `Update category <OldName> to <NewName>`
+- **Delete Category**: `Delete category <CategoryName>`
+- **Generate Test Cases**: Ask AI to generate test cases by describing the feature/scenario
+
+All AI interactions reflect live changes in the app.
+
+---
+
 ## Features
 
 Category-wise test case management  
@@ -30,6 +43,31 @@ Full Dockerized setup and Google Cloud Run deployment
 | Database   | MySQL (Cloud-hosted)      |
 | AI Engine  | OpenAI API (GPT-4)        |
 | Deployment | Docker, Google Cloud Run  |
+
+---
+
+## Setup Instructions
+
+### Prerequisites:
+
+- Docker
+- Google Cloud SDK (for deployment)
+
+### Run Locally
+
+```bash
+# Frontend
+cd frontend
+npm install
+npm run dev
+
+# Backend
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
 
 ---
 
